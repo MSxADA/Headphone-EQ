@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Headphone EQ Library</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Use Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937; /* Brighter: bg-gray-800 */
+            color: #f3f4f6; /* text-gray-100 */
+        }
+        /* Custom scrollbar for a sleeker look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #374151; /* bg-gray-700 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6; /* bg-blue-500 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa; /* bg-blue-400 */
+        }
+        
+        /* 3D inset shadow for the slider track */
+        .slider-track {
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+            position: relative; /* Needed for absolute positioning of markers */
+        }
+        
+        /* 3D styling for the fader knob */
+        .fader-knob {
+            transition: bottom 0.3s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.25);
+            border-bottom-width: 4px; /* This border-bottom gives it a "bottom edge" */
+        }
+
+        /* EQ Marker Styles */
+        .eq-marker {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px; /* Line thickness */
+            background-color: rgba(255, 255, 255, 0.25); /* Brighter line */
+            z-index: 0; /* Ensure it's behind the fader */
+        }
+        .eq-marker-label {
+            position: absolute;
+            left: -20px; /* Position to the left of the track */
+            font-size: 0.65rem; /* Smaller font */
+            color: #d1d5db; /* Brighter: gray-300 */
+            width: 20px; /* Space for the label */
+            text-align: right;
+            line-height: 1; /* Adjust line height for better alignment */
+            transform: translateY(-50%); /* Center vertically */
+        }
+        /* Extend the marker line slightly outside the track */
+        .eq-marker::before {
+            content: '';
+            position: absolute;
+            left: -4px; /* Extend to the left */
+            width: 4px;
+            height: 100%;
+            background-color: inherit;
+        }
+        .eq-marker::after {
+            content: '';
+            position: absolute;
+            right: -4px; /* Extend to the right */
+            width: 4px;
+            height: 100%;
+            background-color: inherit;
+        }
+        .eq-marker-label.right {
+            left: unset; /* Remove left positioning */
+            right: -20px; /* Position to the right */
+            text-align: left;
+        }
+        .eq-marker-label.right::before {
+             content: '';
+            position: absolute;
+            left: -4px; /* Extend to the left from the label, connecting to the line */
+            width: 4px;
+            height: 100%;
+            background-color: inherit;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex items-center justify-center">
+
+    <div class="w-full max-w-4xl bg-gradient-to-b from-gray-700 to-gray-700/90 shadow-2xl rounded-2xl p-6 md:p-8 border border-gray-600/50">
+        
+        <!-- Header -->
+        <header class="mb-8 pb-4 border-b border-gray-600">
+            <h1 class="text-3xl font-extrabold text-white text-center tracking-tight">HEADPHONE EQ LIBRARY</h1>
+            <p class="text-center text-blue-300 mt-1 font-medium">Cambridge CXN100 Preset Visualizer</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8">
+            <div class="flex-1">
+                <label for="headphone-select" class="block text-sm font-medium text-gray-200 mb-2">Headphone:</label>
+                <select id="headphone-select" class="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner">
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <div class="flex-1">
+                <label for="preset-select" class="block text-sm font-medium text-gray-200 mb-2">Preset:</label>
+                <select id="preset-select" class="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner">
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- 3D Visualizer -->
+        <div class="bg-gray-800 p-6 md:p-8 rounded-lg mb-6 shadow-inner border border-black/20">
+            <div class="flex justify-around items-end h-72" id="visualizer-container">
+                <!-- 7 EQ bands will be generated by JS -->
+            </div>
+            <div class="flex justify-around text-xs text-gray-400 font-bold mt-3 tracking-wider">
+                <span class="w-1/7 text-center">63Hz</span>
+                <span class="w-1/7 text-center">160Hz</span>
+                <span class="w-1/7 text-center">400Hz</span>
+                <span class="w-1/7 text-center">1kHz</span>
+                <span class="w-1/7 text-center">2.5kHz</span>
+                <span class="w-1/7 text-center">6.3kHz</span>
+                <span class="w-1/7 text-center">16kHz</span>
+            </div>
+        </div>
+
+        <!-- Preset Notes -->
+        <div>
+            <h2 class="text-xl font-semibold text-white mb-3">Preset Notes</h2>
+            <div class="bg-gray-600/50 shadow-inner p-4 rounded-lg min-h-[100px] text-gray-100 text-base" id="preset-description">
+                Select a headphone and preset to see the notes.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- PRESET DATA ---
+        // All values are in dB, from +3 to -6 (the 9dB range of your EQ)
+        // Sliders: [63Hz, 160Hz, 400Hz, 1kHz, 2.5kHz, 6.3kHz, 16kHz]
+        const PRESETS = {
+            "Audeze LCD-2 Classic": {
+                "My Custom EQ": {
+                    "My V-Shape (from Screenshot)": {
+                        values: [0.5, 1, -2, -5, -2.5, 0, 0.5],
+                        description: "My personal EQ to fix the 'shouty' mids and 'muddy' bass. This is the V-shape I created."
+                    }
+                },
+                "Listening Styles": {
+                    "Fuller Bass & Warmth": {
+                        values: [2, 1, -1, -4, -3, -1, -1],
+                        description: "Boosts sub-bass for rumble and low-mids for warmth. Deeper V-shape to keep mids non-fatiguing."
+                    },
+                    "Energetic & Forward": {
+                        values: [1.5, 1, -2, -5, -3, 1, 1.5],
+                        description: "A classic 'fun' V-shape. Boosts bass and treble for excitement, while keeping the 'shouty' mids cut."
+                    },
+                    "Crisp Vocals & Detail": {
+                        values: [0, -1, -2, -4, -2, 1.5, 2],
+                        description: "Tricky for this headphone. Keeps the 'shout' (1k) cut, but raises the 'presence' (2.5k) and 'air' (6k+) to add clarity."
+                    },
+                    "Smooth & Relaxed": {
+                        values: [0, -1, -2, -5, -4, -1, -2],
+                        description: "My 'anti-shout' V-shape combined with a treble cut for an extremely dark and relaxing, fatigue-free sound."
+                    },
+                    "Late Night Listening": {
+                        values: [1, 0, -2, -6, -5, -2, -3],
+                        description: "A 'Fletcher-Munson' curve. Boosts bass and cuts treble for a full sound at very low volumes."
+                    },
+                    "Theater (Movies)": {
+                        values: [3, 2, -1, -4, -2, 1, 1],
+                        description: "Maximum sub-bass for rumbles and explosions. Mids are still cut to prevent shouty dialogue."
+                    }
+                },
+                "Music Genres": {
+                    "Classic Rock": {
+                        values: [0.5, 1, -2, -5, -2.5, 0, 0.5],
+                        description: "This is my custom preset. A great all-rounder V-shape for rock."
+                    },
+                    "Pop": {
+                        values: [1.5, 1, -2, -5, -3, 1, 1.5],
+                        description: "Same as 'Energetic & Forward'. A fun V-shape with punchy bass and clear highs."
+                    },
+                    "Jazz": {
+                        values: [-1, -1, -1, -2, -1, 1, 1.5],
+                        description: "A much gentler curve. Cleans up bass, brings mids closer (but still cut -2dB!), and adds air."
+                    },
+                    "Metal": {
+                        values: [1, 0, -3, -6, -4, 1, 1],
+                        description: "A 'Tightened V-Shape'. A deep cut in the low-mids (400Hz) to remove *all* mud and a deep cut at 1kHz."
+                    },
+                    "Stoner Metal": {
+                        values: [2, 1, 0, -4, -3, -1, -2],
+                        description: "A thick, dark, and heavy preset. Lets the low-mids (400Hz) stay to add 'thickness' to guitars. Dark treble."
+                    },
+                    "Acoustic": {
+                        values: [-2, -1, -1, -2, -1, 1, 1.5],
+                        description: "Like the 'Jazz' preset. Cleans up the bass significantly to focus on string and vocal texture."
+                    },
+                    "Classical": {
+                        values: [0, -1, -1, -2, -1, 0.5, 1],
+                        description: "A very mild curve. Fixes the 'shout' with a gentle -2dB cut and adds a bit of air. Mostly neutral."
+                    },
+                    "Electronic/Dance": {
+                        values: [3, 1.5, -2, -6, -3, 1, 2],
+                        description: "A deep, powerful V-shape. Max sub-bass for the drop, deep mid-cut, and sparkly treble."
+                    },
+                    "R&B": {
+                        values: [2, 1, 0, -3, -2, 0, 0],
+                        description: "Warm, thick bass and smooth, present (but not shouty) vocals. A very 'musical' curve."
+                    },
+                    "Rap": {
+                        values: [3, 1, -1, -3, -2, 0.5, 1],
+                        description: "Focus on deep sub-bass (Slider 1) and vocal clarity (Slider 5/6), with a moderate mid-cut."
+                    },
+                    "Country": {
+                        values: [-1, 0, -1, -2, -1, 1, 1],
+                        description: "Similar to Jazz/Acoustic. Needs vocal presence, so the mid-cut is very gentle. Focus on clarity."
+                    },
+                    "Funk & Soul": {
+                        values: [1, 1.5, -1, -3, -2, 0, 1],
+                        description: "A 'bouncy' preset. Focus is on the punchy mid-bass (Slider 2) and clear, smooth highs."
+                    },
+                    "Reggae": {
+                        values: [3, 2, 0, -5, -4, -1, -1],
+                        description: "All about that bass line. Heavy boost on Sliders 1 & 2, with the mids and treble pulled way back."
+                    }
+                }
+            },
+            "Hifiman Arya Stealth": {
+                "Listening Styles": {
+                    "Fuller Bass & Warmth": {
+                        values: [3, 2, 1, 0, 0, -3, -2],
+                        description: "Fixes the Arya's 'lean' sound. Adds bass punch and low-mid 'body' (Slider 3) and cuts the bright treble."
+                    },
+                    "Energetic & Forward": {
+                        values: [2, 1, 0, 1, 0.5, -2, -1],
+                        description: "A 'W-Shape' for the Arya. Boosts bass, gently brings the recessed mids forward, and tames the treble."
+                    },
+                    "Crisp Vocals & Detail": {
+                        values: [1, 0, 0, 0.5, 0, -1, 0],
+                        description: "A very careful preset. Adds a touch of bass, brings mids up slightly, and gently cuts the 'sizzle' (Slider 6)."
+                    },
+                    "Smooth & Relaxed": {
+                        values: [2, 1, 0, 0, 0, -4, -3],
+                        description: "The 'Anti-Arya' curve. Adds body and warmth while strongly cutting the fatiguing treble."
+                    },
+                    "Late Night Listening": {
+                        values: [1, 0, 0, 0, 0, -5, -4],
+                        description: "For low-volume listening. Cuts all potential harshness and keeps the sound balanced."
+                    },
+                    "Theater (Movies)": {
+                        values: [4, 2, 0, 0, 0, -2, 0],
+                        description: "Big sub-bass for rumble, clean mids for dialogue, and tamed treble. Perfect for the Arya's huge soundstage."
+                    }
+                },
+                "Music Genres": {
+                    "Classic Rock": {
+                        values: [3, 2, 0, 0, 0, -2, -1],
+                        description: "Adds the 'authoritative' punch and body that the Arya lacks for classic rock drums and guitars. Tames treble."
+                    },
+                    "Pop": {
+                        values: [2, 1, 0, 0, 0, -1, 0],
+                        description: "A fun, punchy V-shape. Adds bass slam and slightly tames the treble for modern production."
+                    },
+                    "Jazz": {
+                        values: [1, 0, 0, 0, 0, -1.5, -1],
+                        description: "A very gentle curve to add a touch of bass warmth and tame the treble, making it more 'natural' sounding."
+                    },
+                    "Metal": {
+                        values: [4, 3, 0, 0, 0, -2, -1],
+                        description: "The 'Authoritative Bass' preset. Gives the Arya the slam and weight it needs for heavy metal, without mud."
+                    },
+                    "Stoner Metal": {
+                        values: [4, 2, 1, 0, 0, -3, -2],
+                        description: "Like the 'Fuller Bass & Warmth' preset. Creates a thick, heavy 'wall of sound' and cuts the treble."
+                    },
+                    "Acoustic": {
+                        values: [0, 0, 0.5, 1, 0.5, -2, -1],
+                        description: "Brings the recessed mids (vocals, guitars) forward to a more natural, intimate level. Cuts treble."
+                    },
+                    "Classical": {
+                        values: [1, 0, 0, 0, 0, -2.5, -1.5],
+                        description: "Tames the Arya's brightness to make strings and brass sound less harsh and more natural."
+                    },
+                    "Electronic/Dance": {
+                        values: [4, 2, 0, 0, 0, -1, 0],
+                        description: "Big V-shape. Max bass punch and rumble, with the recessed mids and airy treble."
+                    },
+                    "R&B": {
+                        values: [3, 2, 1, 0.5, 0, -3, -2],
+                        description: "Warm, smooth, and bassy. Boosts the bass, adds body (Slider 3), and cuts the treble."
+                    },
+                    "Rap": {
+                        values: [4, 2, 0, 0, 0, -2, -1],
+                        description: "Maximum sub-bass rumble (Slider 1) for the 808s, with a clean mid-range and tamed treble."
+                    },
+                    "Country": {
+                        values: [0, 0, 0.5, 1, 0.5, -2, -1],
+                        description: "Like the 'Acoustic' preset. Brings vocals and guitars forward to sound more natural and less distant."
+                    },
+                    "Funk & Soul": {
+                        values: [2, 2, 0, 0, 0, -2, -1],
+                        description: "Focus on the 'bouncy' mid-bass (Slider 2) and a smooth, non-fatiguing top end."
+                    },
+                    "Reggae": {
+                        values: [4, 2.5, 1, 0, 0, -3, -2],
+                        description: "All about the bass line. A heavy, warm, and smooth sound with deeply recessed treble."
+                    }
+                }
+            }
+        };
+
+        // --- UI STYLING ---
+        // Brighter, unified color scheme
+        const faderColor = 'bg-blue-500';
+        const faderBorderColor = 'border-blue-600';
+        const valueTextColor = 'text-blue-300';
+
+        // --- DOM ELEMENTS ---
+        const headphoneSelect = document.getElementById('headphone-select');
+        const presetSelect = document.getElementById('preset-select');
+        const visualizerContainer = document.getElementById('visualizer-container');
+        const presetDescription = document.getElementById('preset-description');
+
+        /**
+         * Populates the visualizer with 7 bands
+         */
+        function createVisualizerBands() {
+            visualizerContainer.innerHTML = ''; // Clear existing
+            const minDb = -6.0;
+            const maxDb = 4.0;
+            const totalRange = maxDb - minDb;
+
+            for (let i = 0; i < 7; i++) {
+                const bandWrapper = document.createElement('div');
+                bandWrapper.className = 'flex flex-col items-center justify-end h-full w-16 px-1 relative'; // Added relative for marker labels
+                
+                // Value label (e.g., "+3.0dB")
+                const valueLabel = document.createElement('div');
+                valueLabel.className = `bar-value text-sm font-bold mb-2 h-6 ${valueTextColor}`;
+                valueLabel.innerText = '0.0dB';
+
+                // Slider Track (the inset "slot")
+                const track = document.createElement('div');
+                track.className = 'relative w-4 h-64 bg-gray-900 rounded-full slider-track';
+                
+                // Add Markers to the track
+                const addMarker = (dbValue, labelText, isRight = false) => {
+                    const marker = document.createElement('div');
+                    marker.className = 'eq-marker';
+                    const markerPercent = (dbValue - minDb) / totalRange;
+                    marker.style.bottom = `calc(${markerPercent * 100}% - 0.5px)`; // -0.5px to center the 1px line
+                    
+                    const label = document.createElement('span');
+                    label.className = `eq-marker-label ${isRight ? 'right' : ''}`;
+                    label.innerText = labelText;
+                    marker.appendChild(label); // Append label to the marker line itself
+
+                    track.appendChild(marker);
+                };
+
+                // Marker labels are on the right for clarity, but the line extends across the track
+                addMarker(3, '+3dB', true); // +3dB
+                addMarker(0, '0dB', true); // 0dB
+                addMarker(-6, '-6dB', true); // -6dB
+
+                // Slider Handle (the 3D "fader")
+                const sliderHandle = document.createElement('div');
+                sliderHandle.className = `bar-slider fader-knob absolute w-12 h-8 rounded-md ${faderColor} ${faderBorderColor}`;
+                sliderHandle.style.left = '50%';
+                sliderHandle.style.transform = 'translateX(-50%)';
+                
+                // Small line on the fader knob
+                const faderLine = document.createElement('div');
+                faderLine.className = 'w-3/4 h-0.5 bg-black/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full';
+                
+                sliderHandle.appendChild(faderLine);
+                track.appendChild(sliderHandle);
+                bandWrapper.appendChild(valueLabel);
+                bandWrapper.appendChild(track);
+                visualizerContainer.appendChild(bandWrapper);
+            }
+        }
+
+        /**
+         * Populates the Preset dropdown based on the selected headphone
+         */
+        function populatePresets() {
+            const selectedHeadphone = headphoneSelect.value;
+            const groups = PRESETS[selectedHeadphone];
+            
+            presetSelect.innerHTML = ''; // Clear old options
+            
+            // Add custom EQ first if it exists
+            if (groups["My Custom EQ"]) {
+                 const customGroup = groups["My Custom EQ"];
+                 for (const presetName in customGroup) {
+                    const option = document.createElement('option');
+                    option.value = presetName;
+                    option.innerText = presetName;
+                    option.dataset.group = "My Custom EQ"; 
+                    presetSelect.appendChild(option);
+                 }
+            }
+
+            // Add other groups
+            for (const groupName in groups) {
+                if (groupName === "My Custom EQ") continue; // Skip custom group
+                
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `--- ${groupName} ---`; // Added dashes for visual separation
+                
+                const presetsInGroup = groups[groupName];
+                for (const presetName in presetsInGroup) {
+                    const option = document.createElement('option');
+                    option.value = presetName;
+                    option.innerText = presetName;
+                    option.dataset.group = groupName; // Store the group name for easy lookup
+                    optgroup.appendChild(option);
+                }
+                presetSelect.appendChild(optgroup);
+            }
+            
+            updateVisualizer();
+        }
+
+        /**
+         * Updates the visualizer bars, labels, and description
+         */
+        function updateVisualizer() {
+            const selectedHeadphone = headphoneSelect.value;
+            const selectedOption = presetSelect.options[presetSelect.selectedIndex];
+            
+            if (!selectedHeadphone || !selectedOption) {
+                presetDescription.innerText = 'Please select a headphone and preset.';
+                return;
+            }
+
+            const selectedPreset = selectedOption.value;
+            const selectedGroup = selectedOption.dataset.group;
+
+            // This is the line that finds the preset object
+            const preset = PRESETS[selectedHeadphone][selectedGroup][selectedPreset];
+            
+            if (!preset) {
+                console.error('Preset not found!', selectedHeadphone, selectedGroup, selectedPreset);
+                return;
+            }
+
+            const values = preset.values;
+            const description = preset.description;
+
+            const barSliders = document.querySelectorAll('.bar-slider');
+            const valueLabels = document.querySelectorAll('.bar-value');
+            
+            const minDb = -6.0;
+            const maxDb = 4.0; 
+            const totalRange = maxDb - minDb; 
+
+            values.forEach((value, i) => {
+                // Ensure value is within the -6 to +4 range
+                const cleanValue = Math.max(-6.0, Math.min(4.0, value));
+                
+                // Update the label
+                valueLabels[i].innerText = `${cleanValue.toFixed(1)}dB`;
+                valueLabels[i].style.color = valueTextColor;
+                
+                // Calculate the position
+                const valuePercent = (cleanValue - minDb) / totalRange;
+                
+                // Set the 'bottom' style. (h-8 is 32px, half is 16px)
+                const sliderHandle = barSliders[i];
+                sliderHandle.style.bottom = `calc(${valuePercent * 100}% - 16px)`;
+            });
+            
+            presetDescription.innerText = description;
+        }
+
+        /**
+         * Initializes the application
+         */
+        function init() {
+            // Add headphones to the select dropdown
+            for (const headphoneName in PRESETS) {
+                const option = document.createElement('option');
+                option.value = headphoneName;
+                option.innerText = headphoneName;
+                headphoneSelect.appendChild(option);
+            }
+            
+            createVisualizerBands(); // Create the visualizer elements
+            headphoneSelect.addEventListener('change', populatePresets); // Add event listener
+            presetSelect.addEventListener('change', updateVisualizer); // Add event listener
+            populatePresets(); // Populate presets for the default headphone
+        }
+
+        document.addEventListener('DOMContentLoaded', init); // Start the app
+
+    </script>
+</body>
+</html>
+
