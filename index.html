@@ -5,43 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Headphone EQ Library</title>
     
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Use Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Use Inter font --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1f2937; /* Brighter: bg-gray-800 */
-            color: #f3f4f6; /* text-gray-100 */
+            /* Deep Black background for contrast */
+            background-color: #000000;
+            color: #f1f5f9; /* text-slate-100 for general text */
         }
-        /* Custom scrollbar for a sleeker look */
+        
+        /* Custom scrollbar with metallic gold thumb */
         ::-webkit-scrollbar {
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #374151; /* bg-gray-700 */
+            background: #1a1a1a; /* Darker track */
         }
         ::-webkit-scrollbar-thumb {
-            background: #3b82f6; /* bg-blue-500 */
+            background: #d4af37; /* Metallic Gold */
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #60a5fa; /* bg-blue-400 */
+            background: #e6cb68; /* Lighter gold on hover */
         }
         
         /* 3D inset shadow for the slider track */
         .slider-track {
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.9);
             position: relative; /* Needed for absolute positioning of markers */
+            /* Brushed silver background for the track itself */
+            background-color: #bfbfbf;
+            background-image: linear-gradient(to right, #ccc 0%, #eee 50%, #ccc 100%);
+            border: 1px solid #777; /* Subtle border */
         }
         
-        /* 3D styling for the fader knob */
+        /* 3D styling for the fader knob - Metallic Gold */
         .fader-knob {
             transition: bottom 0.3s ease-in-out;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.25);
-            border-bottom-width: 4px; /* This border-bottom gives it a "bottom edge" */
+            /* More pronounced 3D shadow */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.4);
+            /* Metallic gold gradient */
+            background: linear-gradient(to bottom, #f0e68c 0%, #d4af37 50%, #a27a2a 100%);
+            /* Gold borders for top highlight and bottom shadow */
+            border-top: 1px solid #ffe6a0;
+            border-bottom: 4px solid #8b6b10;
+            cursor: grab;
+        }
+        .fader-knob:active {
+            cursor: grabbing;
         }
 
         /* EQ Marker Styles */
@@ -50,19 +63,23 @@
             left: 0;
             right: 0;
             height: 1px; /* Line thickness */
-            background-color: rgba(255, 255, 255, 0.25); /* Brighter line */
+            /* Brighter white line for markers */
+            background-color: rgba(255, 255, 255, 0.8);
             z-index: 0; /* Ensure it's behind the fader */
         }
         .eq-marker-label {
             position: absolute;
             left: -20px; /* Position to the left of the track */
             font-size: 0.65rem; /* Smaller font */
-            color: #d1d5db; /* Brighter: gray-300 */
+            color: #d4af37; /* Metallic Gold for labels */
             width: 20px; /* Space for the label */
             text-align: right;
             line-height: 1; /* Adjust line height for better alignment */
             transform: translateY(-50%); /* Center vertically */
+            font-weight: 500;
+            text-shadow: 0 0 3px rgba(0,0,0,0.5); /* Subtle drop shadow */
         }
+        
         /* Extend the marker line slightly outside the track */
         .eq-marker::before {
             content: '';
@@ -85,47 +102,34 @@
             right: -20px; /* Position to the right */
             text-align: left;
         }
-        .eq-marker-label.right::before {
-             content: '';
-            position: absolute;
-            left: -4px; /* Extend to the left from the label, connecting to the line */
-            width: 4px;
-            height: 100%;
-            background-color: inherit;
-        }
+        /* No need for ::before on label.right, as the line already extends */
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8 flex items-center justify-center">
 
-    <div class="w-full max-w-4xl bg-gradient-to-b from-gray-700 to-gray-700/90 shadow-2xl rounded-2xl p-6 md:p-8 border border-gray-600/50">
+    <!-- Main container card with brushed silver and gold accents --><div class="w-full max-w-4xl bg-gradient-to-b from-gray-700 to-gray-800/90 shadow-2xl rounded-2xl p-6 md:p-8 border border-gray-600">
         
-        <!-- Header -->
-        <header class="mb-8 pb-4 border-b border-gray-600">
-            <h1 class="text-3xl font-extrabold text-white text-center tracking-tight">HEADPHONE EQ LIBRARY</h1>
-            <p class="text-center text-blue-300 mt-1 font-medium">Cambridge CXN100 Preset Visualizer</p>
+        <!-- Header --><header class="mb-8 pb-4 border-b border-gray-600">
+            <!-- Metallic Gold text for "color pop" --><h1 class="text-3xl font-extrabold text-center tracking-tight bg-gradient-to-r from-yellow-300 to-amber-500 bg-clip-text text-transparent">HEADPHONE EQ LIBRARY</h1>
+            <p class="text-center text-gray-300 mt-1 font-medium">Cambridge CXN100 Preset Visualizer</p>
         </header>
 
-        <!-- Controls -->
-        <div class="flex flex-col md:flex-row gap-4 mb-8">
+        <!-- Controls --><div class="flex flex-col md:flex-row gap-4 mb-8">
             <div class="flex-1">
                 <label for="headphone-select" class="block text-sm font-medium text-gray-200 mb-2">Headphone:</label>
-                <select id="headphone-select" class="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner">
-                    <!-- Options will be populated by JS -->
-                </select>
+                <!-- Brushed silver look for select --><select id="headphone-select" class="w-full p-3 bg-gray-500/70 border border-gray-400 rounded-lg text-white font-semibold focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition shadow-inner">
+                    <!-- Options will be populated by JS --></select>
             </div>
             <div class="flex-1">
                 <label for="preset-select" class="block text-sm font-medium text-gray-200 mb-2">Preset:</label>
-                <select id="preset-select" class="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner">
-                    <!-- Options will be populated by JS -->
-                </select>
+                <select id="preset-select" class="w-full p-3 bg-gray-500/70 border border-gray-400 rounded-lg text-white font-semibold focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition shadow-inner">
+                    <!-- Options will be populated by JS --></select>
             </div>
         </div>
 
-        <!-- 3D Visualizer -->
-        <div class="bg-gray-800 p-6 md:p-8 rounded-lg mb-6 shadow-inner border border-black/20">
+        <!-- 3D Visualizer - Sunken appearance with deep black interior --><div class="bg-black/80 p-6 md:p-8 rounded-lg mb-6 shadow-inner-2xl border-t border-white/10">
             <div class="flex justify-around items-end h-72" id="visualizer-container">
-                <!-- 7 EQ bands will be generated by JS -->
-            </div>
+                <!-- 7 EQ bands will be generated by JS --></div>
             <div class="flex justify-around text-xs text-gray-400 font-bold mt-3 tracking-wider">
                 <span class="w-1/7 text-center">63Hz</span>
                 <span class="w-1/7 text-center">160Hz</span>
@@ -137,10 +141,9 @@
             </div>
         </div>
 
-        <!-- Preset Notes -->
-        <div>
+        <!-- Preset Notes - Frosted Glass effect --><div>
             <h2 class="text-xl font-semibold text-white mb-3">Preset Notes</h2>
-            <div class="bg-gray-600/50 shadow-inner p-4 rounded-lg min-h-[100px] text-gray-100 text-base" id="preset-description">
+            <!-- Adjusted glassmorphism for a brighter silver-ish look --><div class="bg-gray-500/30 backdrop-blur-sm shadow-inner p-4 rounded-lg min-h-[100px] text-gray-100 text-base border border-gray-400/50" id="preset-description">
                 Select a headphone and preset to see the notes.
             </div>
         </div>
@@ -238,9 +241,41 @@
                         values: [3, 2, 0, -5, -4, -1, -1],
                         description: "All about that bass line. Heavy boost on Sliders 1 & 2, with the mids and treble pulled way back."
                     }
+                },
+                "Reference Curves": {
+                    "Harman (Olive-Welti)": {
+                        values: [1.5, 0.5, -1, -3, 0, 1.5, 2],
+                        description: "Target: Harman (Olive-Welti). Boosts sub-bass and air, and fixes the 'shouty' 1kHz region for a more conventional, v-shaped sound."
+                    },
+                    "Diffuse Field (DF)": {
+                        values: [-3, -2, 0, -1, 1, 2, 3],
+                        description: "Target: Diffuse Field (DF). A bright, 'analytical' curve. Cuts the warm bass and boosts the upper-mids and treble significantly."
+                    },
+                    "Free Field (FF)": {
+                        values: [-2, -1, 0, -1, 0.5, 1, 1.5],
+                        description: "Target: Free Field (FF). A bright-neutral curve. Cuts bass and gently lifts the treble, aiming for a 'flat in an open space' sound."
+                    },
+                    "Sonarworks (SoundID)": {
+                        values: [0.5, 0, -1, -3, -1, 0, 1],
+                        description: "Target: Sonarworks (SoundID). A 'studio neutral' curve, similar to Harman but often with a less aggressive bass boost and smoother treble."
+                    },
+                    "Crinnacle IEF Neutral": {
+                        values: [-1, -1, -1, -3, -1, 0, 0],
+                        description: "Target: Crinnacle IEF Neutral. A 'neutral-warm' target. Tames the shouty mids and smooths the treble for a balanced sound."
+                    },
+                    "Moondrop VDSF": {
+                        values: [1, 0, -1, -4, -1, 1, 1.5],
+                        description: "Target: Moondrop VDSF. A modern target similar to Harman. Aims for a natural, v-shaped sound by taming the 1kHz shout."
+                    }
                 }
             },
             "Hifiman Arya Stealth": {
+                "My Custom EQ": {
+                    "Default Correction": {
+                        values: [2, 1, 0.5, 0.5, 0.5, -2, -1],
+                        description: "A balanced 'correction' preset. Adds missing bass punch and body, brings vocals forward, and tames the bright, fatiguing treble."
+                    }
+                },
                 "Listening Styles": {
                     "Fuller Bass & Warmth": {
                         values: [3, 2, 1, 0, 0, -3, -2],
@@ -320,15 +355,39 @@
                         values: [4, 2.5, 1, 0, 0, -3, -2],
                         description: "All about the bass line. A heavy, warm, and smooth sound with deeply recessed treble."
                     }
+                },
+                "Reference Curves": {
+                    "Harman (Olive-Welti)": {
+                        values: [3, 2, 1, 1, 0.5, -2, -1],
+                        description: "Target: Harman (Olive-Welti). Fixes the Arya's lean sound by adding bass, bringing mids forward, and taming the bright treble."
+                    },
+                    "Diffuse Field (DF)": {
+                        values: [-1, -1, 0, 0.5, 1, 1, 0],
+                        description: "Target: Diffuse Field (DF). A very bright, 'analytical' curve. This preset removes bass to emphasize the Arya's already-bright signature."
+                    },
+                    "Free Field (FF)": {
+                        values: [-1, 0, 0, 0.5, 0.5, 0, 0],
+                        description: "Target: Free Field (FF). A bright-neutral curve. Aims for an 'open space' sound, which is close to the Arya's default tuning but leaner."
+                    },
+                    "Sonarworks (SoundID)": {
+                        values: [2, 1, 0.5, 0.5, 0, -1, -1],
+                        description: "Target: Sonarworks (SoundID). A 'studio neutral' curve. Adds body, balances the mids, and smooths the treble for accurate monitoring."
+                    },
+                    "Crinnacle IEF Neutral": {
+                        values: [1.5, 1, 0.5, 0.5, 0, -1.5, -1],
+                        description: "Target: Crinnacle IEF Neutral. A 'neutral-warm' target. Adds body and tames the treble for a more balanced, natural sound."
+                    },
+                    "Moondrop VDSF": {
+                        values: [2.5, 1.5, 1, 1, 0.5, -2, -1],
+                        description: "Target: Moondrop VDSF. A modern target similar to Harman. Adds bass warmth, balances the mids, and cuts treble for a 'natural' sound."
+                    }
                 }
             }
         };
 
         // --- UI STYLING ---
-        // Brighter, unified color scheme
-        const faderColor = 'bg-blue-500';
-        const faderBorderColor = 'border-blue-600';
-        const valueTextColor = 'text-blue-300';
+        // Vibrant color for the value labels
+        const valueTextColor = 'text-yellow-300'; // Metallic gold for labels
 
         // --- DOM ELEMENTS ---
         const headphoneSelect = document.getElementById('headphone-select');
@@ -351,12 +410,14 @@
                 
                 // Value label (e.g., "+3.0dB")
                 const valueLabel = document.createElement('div');
+                // Set class with the vibrant color
                 valueLabel.className = `bar-value text-sm font-bold mb-2 h-6 ${valueTextColor}`;
                 valueLabel.innerText = '0.0dB';
 
                 // Slider Track (the inset "slot")
                 const track = document.createElement('div');
-                track.className = 'relative w-4 h-64 bg-gray-900 rounded-full slider-track';
+                // Updated to brushed silver background
+                track.className = 'relative w-4 h-64 rounded-full slider-track';
                 
                 // Add Markers to the track
                 const addMarker = (dbValue, labelText, isRight = false) => {
@@ -380,13 +441,14 @@
 
                 // Slider Handle (the 3D "fader")
                 const sliderHandle = document.createElement('div');
-                sliderHandle.className = `bar-slider fader-knob absolute w-12 h-8 rounded-md ${faderColor} ${faderBorderColor}`;
+                // Updated to metallic gold gradient
+                sliderHandle.className = `bar-slider fader-knob absolute w-12 h-8 rounded-md`;
                 sliderHandle.style.left = '50%';
                 sliderHandle.style.transform = 'translateX(-50%)';
                 
-                // Small line on the fader knob
+                // Small line on the fader knob, with a more integrated color (deep gold)
                 const faderLine = document.createElement('div');
-                faderLine.className = 'w-3/4 h-0.5 bg-black/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full';
+                faderLine.className = 'w-3/4 h-0.5 bg-yellow-900/50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full';
                 
                 sliderHandle.appendChild(faderLine);
                 track.appendChild(sliderHandle);
@@ -477,7 +539,7 @@
                 
                 // Update the label
                 valueLabels[i].innerText = `${cleanValue.toFixed(1)}dB`;
-                valueLabels[i].style.color = valueTextColor;
+                // The color is now set by the class, so no need to change it here
                 
                 // Calculate the position
                 const valuePercent = (cleanValue - minDb) / totalRange;
@@ -513,4 +575,3 @@
     </script>
 </body>
 </html>
-
